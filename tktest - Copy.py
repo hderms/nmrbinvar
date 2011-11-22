@@ -1,16 +1,9 @@
 import Tkinter as tk
 import os
 from tkFileDialog import askopenfilename
-import platform
+
 root = tk.Tk()
 
-#platform specific logic because tk askopenfile contains some bugs with python + windows
-global Windows
-if platform.system() == 'Windows':
-	Windows = True
-else:
-	Windows = False
-print platform.system()
 class chooseGroup(object):
 	
 	def __init__(self,container, parent, group):
@@ -52,10 +45,8 @@ class group(object):
 		
 
 def get_files(window, num_groups, group_container):
-	path = askopenfilename(multiple=1)
-	print Windows
-	path = path if not Windows else [x for x in window.tk.splitlist(path)]
-	print "Path is %s" % '\n'.join(path)
+	path = askopenfilename(multiple=True)
+	print "askopenfilename returned %s" % [x for x in window.tk.splitlist(path)]
 	group_container.choose(window, path)
 
 		
@@ -80,10 +71,14 @@ def genListbox(rootwindow, groupContainer):
 	listbox.config(width = 70)
 	for x in groupContainer.group_hash.keys():
 		print "key is %s" % x
-		
+		if isinstance(x, basestring):
+			print "found string"
+			break
+
+
 		for path in groupContainer.group_hash[x].paths:
 			print "path is %s" %path	
-			listbox.insert(tk.END, os.path.split(path)[1] + '\t Group:' + x)
+			listbox.insert(tk.END, os.path.split(path)[0] + '\t Group:' + x)
 	return listbox
 #tk.Button(root, text="T-test/Anova", command=)
 tk.Button(root,text="Display groups", command= lambda : genListbox(root, spectralGroups)).pack(padx=5,pady=5)
