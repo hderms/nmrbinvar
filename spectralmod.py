@@ -1,5 +1,10 @@
 import csv
 from misc import printl
+import spectralerrors
+
+import tkMessageBox
+
+
 class spectralListGenerator(object):
 
 	def __init__(self, listoffilenames=None):
@@ -13,18 +18,49 @@ class spectralListGenerator(object):
 class csvOpener(object):
 	delimiter = '\t'
 	def __init__(self, fileList = None, delimiter = '\t'):
+		print "csvOpener init"
 		self.delimiter = '\t'
 		self.csvList = []
+		self.numcolumnlist = []
 		if fileList:
 			for filenm in fileList:
-				self.csvList.append(self.extract_contents(filenm))
-	
-	def extract_contents(self, fileName):
-		file_ref = open(fileName ,'rb')
-		csv_contents = [row for row in csv.reader(file_ref, self.delimiter)]
-		return csv_contents
-			
+				tempcontents = self.extract_contents(filenm)
+				if tempcontents:
+					self.csvList.append(tempcontents)
+				else:
+					print "Did not add %s, an error must have occurred, otherwise Nonetype would not have been returned by extract_contents" %filenm
+		try:
+			assert(len(self.csvList) != 0)
+		except:
+			raise spectralerrors.EmptyGroupError("Empty group")
 
+	def extract_contents(self, fileName):
+		try:
+			file_ref = open(fileName ,'rb')
+		except:
+			printl('Error opening %s' %fileName)
+			tkMessageBox.showerror("File Error", "Error opening %s" %fileName)
+			return None
+		try:
+			csvContents = [row for row in csv.reader(file_ref, delimiter = self.delimiter)]
+		except:
+			tkMessageBox.showerror("File Error", "CSV is not tab-delimited. Error opening  %s" %fileName)
+			return None
+		self.numcolumnlist.append(max([len(x) for x in csvContents]))
+		return csvFile(fileName, csvContents)
+class csvFile(object):
+	def __init__(self, filename, csvContents):
+		self.name = filename
+		self.contents = csvContents #csvContents = row of rows
+		if csvContents:
+			self.generate()
+		
+	def __str__(self):
+		return self.name + '\n' + str(self.contents)
+	def generate(self):
+		self.contents = filter(lambda x: len(x) > 0, self.contents)
+		self.x_values = set([x[0] for x in self.contents])
+		
 class controller(object):
 	def __init__(self):
 		self.controllerDict = {'variance':self.variance, 't-test/anova':self.t_test}
