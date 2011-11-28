@@ -2,15 +2,24 @@ import Tkinter as tk
 import os
 from tkFileDialog import askopenfilename
 import platform
+
+'''EXPERIMENTAL BRANCH'''
+
 root = tk.Tk()
 
 #platform specific logic because tk askopenfile contains some bugs with python + windows
-global Windows
+global _Plotting
+global _Windows
 if platform.system() == 'Windows':
-	Windows = True
+	_Windows = True
 else:
-	Windows = False
-print platform.system()
+	_Windows = False
+try:
+	import matplotlib
+except:
+	_Plotting = True
+
+print "Platform is %s" % platform.system()
 class chooseGroup(object):
 	
 	def __init__(self,container, parent, group):
@@ -48,14 +57,15 @@ class group(object):
 	def __init__(self, paths, groupid = None):
 		self.groupid = groupid
 		self.paths = paths
+	
 		
 		
 
 def get_files(window, num_groups, group_container):
-	path = askopenfilename(multiple=1)
-	print Windows
-	path = path if not Windows else [x for x in window.tk.splitlist(path)]
-	print "Path is %s" % '\n'.join(path)
+	path = askopenfilename(multiple=True)
+	print _Windows
+	path = path if not _Windows else [x for x in window.tk.splitlist(str(path))]
+	print type(path)
 	group_container.choose(window, path)
 
 		
@@ -67,25 +77,28 @@ def makeentry(parent, caption, width=None, **options):
 	entry.pack(side=tk.LEFT)
 	return entry
 
-tk.Button(root, text='Select Files',
-command=lambda : get_files(root, int(groupNumberEntry.get()), spectralGroups)).pack(padx=5, pady=5)
-
+tk.Button(root, text='Select Files', command=lambda : get_files(root, int(groupNumberEntry.get()), spectralGroups)).pack(padx=5, pady=5)
 groupNumberEntry= makeentry(root, "Num Groups")
 groupNumberEntry.insert(0, "1")
 spectralGroups = groupContainer(int(groupNumberEntry.get()))
 
-def genListbox(rootwindow, groupContainer):
-	listbox = tk.Listbox(tk.Toplevel(root))
-	listbox.pack()
-	listbox.config(width = 70)
-	for x in groupContainer.group_hash.keys():
-		print "key is %s" % x
+class listBoxFactory(object):
+	def __init__(self, rootwindow, groupContainer):
+		listbox = tk.Listbox(tk.Toplevel(root), selectmode=tk.EXTENDED)
+		listbox.pack()
+		listbox.config(width = 70)
+		self.listOfTerms = []
+		for x in groupContainer.group_hash.keys():
+			for indy, path in enumerate(groupContainer.group_hash[x].paths):
+				listbox.insert(tk.END, os.path.split(path)[1] + '\t Group:' + x)
+				self.listOfTerms.append(path)
+		self.listBox = listbox
+	def __call__(self, *largs, **kargs):
+		self.listBox(*largs, **kargs)
+		print self.listOfTerms
 		
-		for path in groupContainer.group_hash[x].paths:
-			print "path is %s" %path	
-			listbox.insert(tk.END, os.path.split(path)[1] + '\t Group:' + x)
-	return listbox
 #tk.Button(root, text="T-test/Anova", command=)
-tk.Button(root,text="Display groups", command= lambda : genListbox(root, spectralGroups)).pack(padx=5,pady=5)
+tk.Button(root,text="Display groups", command= lambda : listBoxFactory(root, spectralGroups)).pack(padx=5,pady=5)
+
 root.mainloop()
 
