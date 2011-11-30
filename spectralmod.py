@@ -50,6 +50,7 @@ class csvOpener(object):
 		return csvFile(fileName, csvContents)
 class csvFile(object):
 	def __init__(self, filename, csvContents):
+		self.y_to_x= {}
 		self.name = filename
 		self.contents = csvContents #csvContents = row of rows
 		if csvContents:
@@ -60,6 +61,10 @@ class csvFile(object):
 	def generate(self):
 		self.contents = filter(lambda x: len(x) > 0, self.contents)
 		self.x_values = set([x[0] for x in self.contents])
+		for x in self.contents:
+			self.y_to_x[x[0]] = float(x[1].strip())
+
+
 		
 class controller(object):
 	def __init__(self):
